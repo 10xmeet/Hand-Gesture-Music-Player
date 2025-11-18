@@ -1,3 +1,4 @@
+from flask import Flask, Response
 import cv2
 import mediapipe as mp
 import pygame
@@ -18,11 +19,49 @@ sounds_mapping = {
     10: "sounds/cr78-Bongo High.mp3"
 }
 
+app = Flask(__name__)
+
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
+# Initialize the camera
 cap = cv2.VideoCapture(0)
+
+@app.route('/video_feed')
+def video_feed():
+    def generate():
+        with mp_hands.Hands(
+            model_complexity=0,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5) as hands:
+            while True:
+                success, frame = cap.read()
+                if not success:
+                    break
+
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                results = hands.process(frame)
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+                if results.multi_hand_landmarks:
+                    for hand_landmarks in results.multi_hand_landmarks:
+                        mp_drawing.draw_landmarks(
+                            frame,
+                            hand_landmarks,
+                            mp_hands.HAND_CONNECTIONS)
+
+                _, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
 # Set higher resolution and window size
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # Set width to 1280 pixels
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)   # Set height to 720 pixels
@@ -145,6 +184,7 @@ with mp_hands.Hands(
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+# Release the camera and close windows
 cap.release()
 cv2.destroyAllWindows()
 

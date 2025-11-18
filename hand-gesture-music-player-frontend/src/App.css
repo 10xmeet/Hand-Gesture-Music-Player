@@ -1,5 +1,40 @@
+/* Responsive Design */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #282c34;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .App {
   text-align: center;
+  width: 90%;
+  max-width: 800px;
+  margin: auto;
+}
+
+.App-header {
+  background-color: #20232a;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 600px) {
+  .App {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .App-header {
+    padding: 15px;
+  }
 }
 
 .App-logo {
@@ -35,4 +70,10 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Add scrollable container */
+.scrollable-container {
+  overflow-y: auto;
+  max-height: calc(100vh - 50px);
 }
