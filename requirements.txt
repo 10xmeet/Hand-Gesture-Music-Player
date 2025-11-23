@@ -1,5 +1,4 @@
-- Python 3.x
-- OpenCV
-- MediaPipe
-
-- Pygame
+opencv-python
+mediapipe
+flask
+pygame

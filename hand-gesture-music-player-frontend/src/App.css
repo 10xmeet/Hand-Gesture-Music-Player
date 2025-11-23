@@ -1,79 +1,87 @@
-/* Responsive Design */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #282c34;
-  color: white;
-  display: flex;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.25);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  position: relative;
+}
+
+/* Floating background orbs for depth */
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
   overflow: hidden;
 }
 
-.App {
-  text-align: center;
-  width: 90%;
-  max-width: 800px;
-  margin: auto;
+.background-overlay::before,
+.background-overlay::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+}
+
+.background-overlay::before {
+  width: 400px;
+  height: 400px;
+  background: #a29bfe;
+  top: -100px;
+  left: -100px;
+  animation: float 10s infinite ease-in-out;
+}
+
+.background-overlay::after {
+  width: 500px;
+  height: 500px;
+  background: #74b9ff;
+  bottom: -150px;
+  right: -150px;
+  animation: float 12s infinite ease-in-out reverse;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(30px, 50px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
 }
 
 .App-header {
-  background-color: #20232a;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-@media (max-width: 600px) {
-  .App {
-    width: 100%;
-    padding: 10px;
-  }
-
-  .App-header {
-    padding: 15px;
-  }
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  z-index: 1;
+  width: 100%;
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  padding: 20px;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Add scrollable container */
-.scrollable-container {
-  overflow-y: auto;
-  max-height: calc(100vh - 50px);
+.app-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: var(--text-primary);
+  letter-spacing: -1px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.4);
+  padding: 10px 30px;
+  border-radius: 50px;
+  backdrop-filter: blur(5px);
+  border: 1px solid var(--glass-border);
 }
