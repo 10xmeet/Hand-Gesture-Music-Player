@@ -1,38 +1,47 @@
 import yt_dlp
-import imageio_ffmpeg
 import os
-import shutil
+import imageio_ffmpeg
+os.environ["IMAGEIO_FFMPEG_EXE"] = imageio_ffmpeg.get_ffmpeg_exe()
+
+try:
+    from moviepy.editor import AudioFileClip
+except ImportError:
+    from moviepy.audio.io.AudioFileClip import AudioFileClip
 
 def download_sample(search_query, output_filename):
-    ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-    print(f"Using ffmpeg at: {ffmpeg_path}")
-    
-    # Options for yt-dlp
+    # Options for yt-dlp - Download video only
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': output_filename,
-        'ffmpeg_location': os.path.dirname(ffmpeg_path), # yt-dlp expects directory or executable? usually directory or full path. Let's try directory first or just path.
-        # Actually yt-dlp 'ffmpeg_location' can be the binary path.
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'wav',
-            'preferredquality': '192',
-        }],
+        'format': 'best', # Download best format (likely mp4/webm)
+        'outtmpl': 'temp_video.%(ext)s',
         'noplaylist': True,
         'quiet': True,
     }
-    
-    # We need to ensure we pass the full path to the binary if possible
-    # But yt-dlp might look for 'ffmpeg' in that folder. 
-    # Let's try to just set the environment variable PATH to include the ffmpeg dir
-    os.environ["PATH"] += os.pathsep + os.path.dirname(ffmpeg_path)
 
     print(f"Searching and downloading: {search_query}...")
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # Search for the first result
             info = ydl.extract_info(f"ytsearch1:{search_query}", download=True)
-            print(f"Downloaded: {info['entries'][0]['title']}")
+            video_ext = info['entries'][0]['ext']
+            temp_video_path = f"temp_video.{video_ext}"
+            print(f"Downloaded video to {temp_video_path}")
+            
+            # Extract audio using moviepy
+            try:
+                print("Extracting audio...")
+                audio_clip = AudioFileClip(temp_video_path)
+                # Trim to first 2 seconds to get just the "hit"
+                audio_clip = audio_clip.subclip(0, 2) 
+                audio_clip.write_audiofile(f"{output_filename}.wav", logger=None)
+                audio_clip.close()
+                print(f"Saved audio to {output_filename}.wav")
+            except Exception as e:
+                print(f"Error extracting audio: {e}")
+            finally:
+                # Cleanup video
+                if os.path.exists(temp_video_path):
+                    os.remove(temp_video_path)
+
     except Exception as e:
         print(f"Error downloading {search_query}: {e}")
 
@@ -50,8 +59,6 @@ def main():
     ]
 
     for query, filename in samples:
-        # We append .wav because postprocessor adds it, but outtmpl needs it without ext sometimes? 
-        # yt-dlp handles extensions. Let's just give base name.
         download_sample(query, filename)
 
 if __name__ == "__main__":
