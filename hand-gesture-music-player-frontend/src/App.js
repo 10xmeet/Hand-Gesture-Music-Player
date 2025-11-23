@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import ModeSelector from './components/ModeSelector';
 import MainDisplay from './components/MainDisplay';
+import Training from './components/Training';
 import './App.css';
 
 function App() {
-  const [activeMode, setActiveMode] = useState('Basic Mode');
+  const [activeMode, setActiveMode] = useState('Stem Player');
   const [volume, setVolume] = useState(0.5);
   const [fingerCount, setFingerCount] = useState(0);
   const [gestureName, setGestureName] = useState('None');
 
-  const modes = ['Basic Mode', 'Advanced Mode', 'Custom Mode', 'Game Mode'];
+  const modes = ['Stem Player', 'Training'];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -36,7 +37,11 @@ function App() {
       <header className="App-header">
         <h1 className="app-title">Sonic Hands</h1>
         <ModeSelector modes={modes} activeMode={activeMode} onModeChange={handleModeChange} />
-        <MainDisplay volume={volume} fingerCount={fingerCount} gestureName={gestureName} />
+        {activeMode === 'Training' ? (
+          <Training />
+        ) : (
+          <MainDisplay volume={volume} fingerCount={fingerCount} gestureName={gestureName} />
+        )}
       </header>
     </div>
   );

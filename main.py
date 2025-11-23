@@ -4,32 +4,45 @@ import mediapipe as mp
 import pygame
 import json
 
-pygame.mixer.init()
+pygame.mixer.init(frequency=44100, channels=2)
+pygame.mixer.set_num_channels(10)  # Allow multiple sounds simultaneously
 
-sounds_mapping = {
-    1: "sounds/animals-1.wav",
-    2: "sounds/animals-2.wav",
-    3: "sounds/animals-3.wav",
-    4: "sounds/animals-4.wav",
-    5: "sounds/animals-5.wav",
-    6: "sounds/animals-6.wav",
-    7: "sounds/animals-7.wav",
-    8: "sounds/animals-8.wav",
-    9: "sounds/animals-9.wav",
-    10: "sounds/animals-10.wav"
+# Load the 4 main stem loops (we'll use 4 of the animals samples as "stems")
+stem_mapping = {
+    'drums': 'sounds/animals-1.wav',    # Thumb controls drums
+    'bass': 'sounds/animals-2.wav',      # Index controls bass
+    'melody': 'sounds/animals-3.wav',    # Middle controls melody
+    'vocals': 'sounds/animals-4.wav'     # Ring controls vocals
 }
 
-# ... (Load user mappings - kept same) ...
+# Pre-load and start all stems playing in loops
+stems = {}
+for i, (stem_name, sound_path) in enumerate(stem_mapping.items()):
+    try:
+        sound = pygame.mixer.Sound(sound_path)
+        channel = pygame.mixer.Channel(i)
+        channel.play(sound, loops=-1)  # Loop indefinitely
+        channel.set_volume(0.0)  # Start muted
+        stems[stem_name] = {'sound': sound, 'channel': channel}
+        print(f"Loaded {stem_name} from {sound_path}")
+    except pygame.error as e:
+        print(f"Could not load {sound_path}: {e}")
 
-# Pre-load sounds
-multi_track_sounds = {}
-for i in range(1, 11):
-    if i in sounds_mapping:
-        sound_path = sounds_mapping[i]
-        try:
-            multi_track_sounds[i] = pygame.mixer.Sound(sound_path)
-        except pygame.error as e:
-            print(f"Could not load sound {sound_path}: {e}")
+mp_drawing = mp.solutions.drawing_utils
+mp_hands = mp.solutions.hands
+
+# Initialize the camera
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+# Global state
+current_state = {
+    "volume": 0.5,
+    "finger_count": 0,
+    "gesture_name": "None",
+    "active_stems": []
+}
 
 app = Flask(__name__)
 
@@ -41,7 +54,6 @@ def status():
 def video_feed():
     def generate():
         global current_state
-        prev_active_fingers = set() # Track which fingers were up in the last frame
         
         with mp_hands.Hands(
             model_complexity=0,
@@ -59,43 +71,51 @@ def video_feed():
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-                current_active_fingers = set()
+                active_fingers = {
+                    'drums': False,
+                    'bass': False,
+                    'melody': False,
+                    'vocals': False
+                }
                 volume = 0.5
                 total_finger_count = 0
 
                 if results.multi_hand_landmarks:
                     for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
-                        hand_label = handedness.classification[0].label # "Left" or "Right"
+                        hand_label = handedness.classification[0].label
                         
-                        # Calculate volume from wrist height (using first hand found for simplicity)
+                        # Calculate volume from wrist height
                         wrist_y = hand_landmarks.landmark[0].y
                         volume = max(0.0, min(1.0, 1 - wrist_y))
 
-                        # Finger IDs: Left (1-5), Right (6-10)
-                        # Thumb, Index, Middle, Ring, Pinky
-                        offset = 0 if hand_label == "Left" else 5
-                        
-                        # Landmarks
-                        # Thumb: 4 vs 3 (x-axis check depends on hand)
+                        # Check which fingers are up
+                        # Thumb
                         thumb_tip = hand_landmarks.landmark[4]
                         thumb_ip = hand_landmarks.landmark[3]
-                        
                         is_thumb_up = False
                         if hand_label == "Left":
                             if thumb_tip.x > thumb_ip.x: is_thumb_up = True
                         else:
                             if thumb_tip.x < thumb_ip.x: is_thumb_up = True
                         
-                        if is_thumb_up: current_active_fingers.add(1 + offset)
+                        if is_thumb_up: 
+                            active_fingers['drums'] = True
+                            total_finger_count += 1
 
-                        # Other fingers (y-axis check)
-                        # Index (8 vs 6), Middle (12 vs 10), Ring (16 vs 14), Pinky (20 vs 18)
-                        tips = [8, 12, 16, 20]
-                        pips = [6, 10, 14, 18]
+                        # Index -> Bass
+                        if hand_landmarks.landmark[8].y < hand_landmarks.landmark[6].y:
+                            active_fingers['bass'] = True
+                            total_finger_count += 1
                         
-                        for i in range(4):
-                            if hand_landmarks.landmark[tips[i]].y < hand_landmarks.landmark[pips[i]].y:
-                                current_active_fingers.add(2 + i + offset)
+                        # Middle -> Melody
+                        if hand_landmarks.landmark[12].y < hand_landmarks.landmark[10].y:
+                            active_fingers['melody'] = True
+                            total_finger_count += 1
+                        
+                        # Ring -> Vocals
+                        if hand_landmarks.landmark[16].y < hand_landmarks.landmark[14].y:
+                            active_fingers['vocals'] = True
+                            total_finger_count += 1
 
                         # Draw landmarks
                         mp_drawing.draw_landmarks(
@@ -106,22 +126,20 @@ def video_feed():
                             mp_drawing.DrawingSpec(color=(255, 0, 255), thickness=2)
                         )
 
-                total_finger_count = len(current_active_fingers)
-
-                # Trigger sounds on Rising Edge (Finger went from Down -> Up)
-                for finger_id in current_active_fingers:
-                    if finger_id not in prev_active_fingers:
-                        if finger_id in multi_track_sounds:
-                            sound = multi_track_sounds[finger_id]
-                            sound.set_volume(volume)
-                            sound.play()
-                
-                prev_active_fingers = current_active_fingers.copy()
+                # Update stem volumes based on active fingers
+                active_stem_names = []
+                for stem_name, is_active in active_fingers.items():
+                    if stem_name in stems:
+                        target_volume = volume if is_active else 0.0
+                        stems[stem_name]['channel'].set_volume(target_volume)
+                        if is_active:
+                            active_stem_names.append(stem_name)
                 
                 # Update global state
                 current_state["volume"] = volume
                 current_state["finger_count"] = total_finger_count
-                current_state["gesture_name"] = "Polyphonic" if total_finger_count > 0 else "Idle"
+                current_state["gesture_name"] = "Mixing" if total_finger_count > 0 else "Idle"
+                current_state["active_stems"] = active_stem_names
 
                 _, buffer = cv2.imencode('.jpg', image)
                 frame = buffer.tobytes()

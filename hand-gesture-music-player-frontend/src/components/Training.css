@@ -1,0 +1,124 @@
+.training-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.training-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 40px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.training-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 30px;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.training-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.instruction-section h3,
+.finger-mapping h3,
+.tips-section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+
+.instruction-section p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.mapping-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.mapping-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mapping-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.finger-icon {
+    font-size: 2rem;
+    color: #667eea;
+    min-width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mapping-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.mapping-info strong {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.mapping-info span {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.instructions-list,
+.tips-list {
+    padding-left: 25px;
+    line-height: 2;
+}
+
+.instructions-list li,
+.tips-list li {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.training-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+}
+
+.training-footer p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+.training-footer strong {
+    color: #667eea;
+    font-weight: 600;
+}
