@@ -11,7 +11,7 @@ const Training = () => {
                 <div className="training-content">
                     <div className="instruction-section">
                         <h3>🎵 What is Stem Player?</h3>
-                        <p>Control individual instruments of "Animals" by Martin Garrix using your fingers. Each finger controls a different part of the song!</p>
+                        <p>Play professional EDM drum samples from "Something Just Like This" using your fingers. Each finger triggers a different sound - create your own beats!</p>
                     </div>
 
                     <div className="finger-mapping">
@@ -21,28 +21,35 @@ const Training = () => {
                                 <div className="finger-icon"><FaDrum /></div>
                                 <div className="mapping-info">
                                     <strong>Thumb</strong>
-                                    <span>Drums</span>
+                                    <span>Kick Drum</span>
                                 </div>
                             </div>
                             <div className="mapping-item">
                                 <div className="finger-icon"><FaGuitar /></div>
                                 <div className="mapping-info">
                                     <strong>Index</strong>
-                                    <span>Bass</span>
+                                    <span>Clap</span>
                                 </div>
                             </div>
                             <div className="mapping-item">
                                 <div className="finger-icon"><FaMusic /></div>
                                 <div className="mapping-info">
                                     <strong>Middle</strong>
-                                    <span>Melody</span>
+                                    <span>Snap</span>
                                 </div>
                             </div>
                             <div className="mapping-item">
                                 <div className="finger-icon"><FaMicrophone /></div>
                                 <div className="mapping-info">
                                     <strong>Ring</strong>
-                                    <span>Vocals</span>
+                                    <span>Crash</span>
+                                </div>
+                            </div>
+                            <div className="mapping-item">
+                                <div className="finger-icon"><FaMusic /></div>
+                                <div className="mapping-info">
+                                    <strong>Pinky</strong>
+                                    <span>Percussion</span>
                                 </div>
                             </div>
                         </div>
@@ -52,9 +59,9 @@ const Training = () => {
                         <h3>🎮 How to Play</h3>
                         <ol className="instructions-list">
                             <li>Show your hand to the camera</li>
-                            <li>Raise fingers to unmute instruments</li>
-                            <li>Lower fingers to mute them</li>
-                            <li>Mix multiple instruments by raising multiple fingers</li>
+                            <li>Raise a finger to trigger a drum sound</li>
+                            <li>Lower and raise again to play it again</li>
+                            <li>Use multiple fingers to create rhythms</li>
                             <li>Move your hand up/down to control volume</li>
                         </ol>
                     </div>
@@ -62,16 +69,17 @@ const Training = () => {
                     <div className="tips-section">
                         <h3>💡 Pro Tips</h3>
                         <ul className="tips-list">
-                            <li>Start with just drums (thumb) to feel the beat</li>
-                            <li>Add bass (index) for the foundation</li>
-                            <li>Layer in melody and vocals for the full experience</li>
-                            <li>Experiment with different combinations!</li>
+                            <li>Start with just the kick drum (thumb)</li>
+                            <li>Add claps on beats 2 and 4</li>
+                            <li>Layer in snaps and percussion for complexity</li>
+                            <li>Create your own beat patterns!</li>
+                            <li>Both hands work - double the fun!</li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="training-footer">
-                    <p>Switch to <strong>Stem Player</strong> mode to start mixing!</p>
+                    <p>Switch to <strong>Stem Player</strong> mode to start playing!</p>
                 </div>
             </div>
         </div>

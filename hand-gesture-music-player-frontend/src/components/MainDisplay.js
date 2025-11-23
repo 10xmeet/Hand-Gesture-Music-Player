@@ -20,7 +20,7 @@ const MainDisplay = ({ volume, fingerCount, gestureName }) => {
         <div className="glass-header">
           <div className="status-item">
             <FaMusic className="icon" />
-            <span>Now Playing: Custom Mix</span>
+            <span>Now Playing: Something Just Like This</span>
           </div>
         </div>
 

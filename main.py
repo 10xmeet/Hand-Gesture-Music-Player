@@ -5,26 +5,25 @@ import pygame
 import json
 
 pygame.mixer.init(frequency=44100, channels=2)
-pygame.mixer.set_num_channels(10)  # Allow multiple sounds simultaneously
+pygame.mixer.set_num_channels(20)  # Allow many sounds simultaneously
 
-# Load the 4 main stem loops (we'll use 4 of the animals samples as "stems")
-stem_mapping = {
-    'drums': 'sounds/animals-1.wav',    # Thumb controls drums
-    'bass': 'sounds/animals-2.wav',      # Index controls bass
-    'melody': 'sounds/animals-3.wav',    # Middle controls melody
-    'vocals': 'sounds/animals-4.wav'     # Ring controls vocals
+# Load professional samples from StiickzZ remake
+sample_base = 'sounds/The Chainsmokers & Coldplay - Something Just Like This (StiickzZ Remake)/'
+sample_mapping = {
+    'kick': sample_base + 'StiickzZ - Kick 27 E.wav',
+    'clap': sample_base + 'StiickzZ - Clap 11.wav',
+    'snap': sample_base + 'StiickzZ - Snap 02.wav',
+    'crash': sample_base + 'StiickzZ - Crash 04.wav',
+    'perc': sample_base + 'StiickzZ - Percussion 20.wav',
 }
 
-# Pre-load and start all stems playing in loops
-stems = {}
-for i, (stem_name, sound_path) in enumerate(stem_mapping.items()):
+# Pre-load all samples
+samples = {}
+for i, (sample_name, sound_path) in enumerate(sample_mapping.items()):
     try:
         sound = pygame.mixer.Sound(sound_path)
-        channel = pygame.mixer.Channel(i)
-        channel.play(sound, loops=-1)  # Loop indefinitely
-        channel.set_volume(0.0)  # Start muted
-        stems[stem_name] = {'sound': sound, 'channel': channel}
-        print(f"Loaded {stem_name} from {sound_path}")
+        samples[sample_name] = sound
+        print(f"Loaded {sample_name} from {sound_path}")
     except pygame.error as e:
         print(f"Could not load {sound_path}: {e}")
 
@@ -41,7 +40,7 @@ current_state = {
     "volume": 0.5,
     "finger_count": 0,
     "gesture_name": "None",
-    "active_stems": []
+    "active_samples": []
 }
 
 app = Flask(__name__)
@@ -54,6 +53,7 @@ def status():
 def video_feed():
     def generate():
         global current_state
+        prev_active_fingers = set()
         
         with mp_hands.Hands(
             model_complexity=0,
@@ -71,12 +71,7 @@ def video_feed():
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-                active_fingers = {
-                    'drums': False,
-                    'bass': False,
-                    'melody': False,
-                    'vocals': False
-                }
+                current_active_fingers = set()
                 volume = 0.5
                 total_finger_count = 0
 
@@ -88,7 +83,9 @@ def video_feed():
                         wrist_y = hand_landmarks.landmark[0].y
                         volume = max(0.0, min(1.0, 1 - wrist_y))
 
-                        # Check which fingers are up
+                        # Finger IDs: Left (1-5), Right (6-10)
+                        offset = 0 if hand_label == "Left" else 5
+                        
                         # Thumb
                         thumb_tip = hand_landmarks.landmark[4]
                         thumb_ip = hand_landmarks.landmark[3]
@@ -98,24 +95,15 @@ def video_feed():
                         else:
                             if thumb_tip.x < thumb_ip.x: is_thumb_up = True
                         
-                        if is_thumb_up: 
-                            active_fingers['drums'] = True
-                            total_finger_count += 1
+                        if is_thumb_up: current_active_fingers.add(1 + offset)
 
-                        # Index -> Bass
-                        if hand_landmarks.landmark[8].y < hand_landmarks.landmark[6].y:
-                            active_fingers['bass'] = True
-                            total_finger_count += 1
+                        # Other fingers (y-axis check)
+                        tips = [8, 12, 16, 20]
+                        pips = [6, 10, 14, 18]
                         
-                        # Middle -> Melody
-                        if hand_landmarks.landmark[12].y < hand_landmarks.landmark[10].y:
-                            active_fingers['melody'] = True
-                            total_finger_count += 1
-                        
-                        # Ring -> Vocals
-                        if hand_landmarks.landmark[16].y < hand_landmarks.landmark[14].y:
-                            active_fingers['vocals'] = True
-                            total_finger_count += 1
+                        for i in range(4):
+                            if hand_landmarks.landmark[tips[i]].y < hand_landmarks.landmark[pips[i]].y:
+                                current_active_fingers.add(2 + i + offset)
 
                         # Draw landmarks
                         mp_drawing.draw_landmarks(
@@ -126,20 +114,40 @@ def video_feed():
                             mp_drawing.DrawingSpec(color=(255, 0, 255), thickness=2)
                         )
 
-                # Update stem volumes based on active fingers
-                active_stem_names = []
-                for stem_name, is_active in active_fingers.items():
-                    if stem_name in stems:
-                        target_volume = volume if is_active else 0.0
-                        stems[stem_name]['channel'].set_volume(target_volume)
-                        if is_active:
-                            active_stem_names.append(stem_name)
+                total_finger_count = len(current_active_fingers)
+
+                # Trigger samples on Rising Edge (Finger went from Down -> Up)
+                # Map fingers to samples
+                finger_to_sample = {
+                    1: 'kick',    # Left thumb
+                    2: 'clap',    # Left index
+                    3: 'snap',    # Left middle
+                    4: 'crash',   # Left ring
+                    5: 'perc',    # Left pinky
+                    6: 'kick',    # Right thumb
+                    7: 'clap',    # Right index
+                    8: 'snap',    # Right middle
+                    9: 'crash',   # Right ring
+                    10: 'perc'    # Right pinky
+                }
+                
+                active_sample_names = []
+                for finger_id in current_active_fingers:
+                    if finger_id not in prev_active_fingers:
+                        sample_name = finger_to_sample.get(finger_id)
+                        if sample_name and sample_name in samples:
+                            sound = samples[sample_name]
+                            sound.set_volume(volume)
+                            sound.play()
+                            active_sample_names.append(sample_name)
+                
+                prev_active_fingers = current_active_fingers.copy()
                 
                 # Update global state
                 current_state["volume"] = volume
                 current_state["finger_count"] = total_finger_count
-                current_state["gesture_name"] = "Mixing" if total_finger_count > 0 else "Idle"
-                current_state["active_stems"] = active_stem_names
+                current_state["gesture_name"] = "Playing" if total_finger_count > 0 else "Idle"
+                current_state["active_samples"] = active_sample_names
 
                 _, buffer = cv2.imencode('.jpg', image)
                 frame = buffer.tobytes()
